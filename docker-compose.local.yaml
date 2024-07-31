@@ -1,0 +1,92 @@
+services:
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./caddy/local.Caddyfile:/etc/caddy/Caddyfile
+    networks:
+      - neowarp
+
+  mysql:
+    image: mysql:9.0.1
+    restart: always
+    depends_on:
+      - caddy
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: neowarp
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    ports:
+      - 3306:3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - neowarp
+
+  myadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    depends_on:
+      - caddy
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: admin
+    ports:
+      - 8080:80
+    networks:
+      - neowarp
+
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend
+    restart: always
+    depends_on:
+      - caddy
+      - mysql
+    command: osrm-routed --algorithm mld /data/serbia-latest
+    ports:
+      - 5000:5000
+    volumes:
+      - ./osrm_data:/data
+    networks:
+      - neowarp
+
+  api:
+    image: neowarp_api:latest
+    restart: always
+    depends_on:
+      - caddy
+      - mysql
+      - osrm
+    build:
+      context: api/
+      dockerfile: images/local.Dockerfile
+    volumes:
+      - ./api:/code
+    networks:
+      - neowarp
+
+  # www:
+  #   image: neowarp_www:latest
+  #   restart: always
+  #   depends_on:
+  #     - caddy
+  #     - api
+  #   build:
+  #     context: www/
+  #     dockerfile: images/local.Dockerfile
+  #   volumes:
+  #     - ./www:/code
+  #     - /code/node_modules
+  #   networks:
+  #     - neowarp
+
+volumes:
+  mysql_data:
+
+networks:
+  neowarp:

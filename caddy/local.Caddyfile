@@ -1,0 +1,19 @@
+app.neowarp.local {
+    tls internal
+
+    handle /api/1.0/* {
+        reverse_proxy api:4000
+    }
+
+    handle {
+        reverse_proxy www:3000
+    }
+}
+
+myadmin.neowarp.local {
+    tls internal
+
+    handle {
+        reverse_proxy myadmin:80
+    }
+}
