@@ -25,5 +25,6 @@ go.work.sum
 *todo*
 *.log
 *env*
-mysql_data
-osrm_data
+mysql_data/
+osrm_data/
+tmp/
